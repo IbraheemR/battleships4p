@@ -1,0 +1,20 @@
+[remap]
+
+importer="wavefront_obj"
+type="Mesh"
+path="res://.import/ship_bow.obj-e27ccaafdad6b893a4cea4fa1f1230ac.mesh"
+
+[deps]
+
+files=[ "res://.import/ship_bow.obj-e27ccaafdad6b893a4cea4fa1f1230ac.mesh" ]
+
+source_file="res://obj/ship_bow.obj"
+dest_files=[ "res://.import/ship_bow.obj-e27ccaafdad6b893a4cea4fa1f1230ac.mesh", "res://.import/ship_bow.obj-e27ccaafdad6b893a4cea4fa1f1230ac.mesh" ]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3( 1, 1, 1 )
+offset_mesh=Vector3( 0, 0, 0 )
+octahedral_compression=true
+optimize_mesh_flags=4286

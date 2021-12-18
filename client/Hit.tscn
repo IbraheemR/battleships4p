@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://red.tres" type="Material" id=1]
+[ext_resource path="res://obj/cross.obj" type="ArrayMesh" id=2]
+
+[node name="Hit" type="MeshInstance"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0 )
+mesh = ExtResource( 2 )
+material/0 = ExtResource( 1 )

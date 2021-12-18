@@ -1,0 +1,372 @@
+[gd_scene load_steps=24 format=2]
+
+[ext_resource path="res://obj/grid.obj" type="ArrayMesh" id=1]
+[ext_resource path="res://WSHandler.tscn" type="PackedScene" id=2]
+[ext_resource path="res://obj/play.obj" type="ArrayMesh" id=3]
+[ext_resource path="res://obj/waiting.obj" type="ArrayMesh" id=4]
+[ext_resource path="res://Camera Pivot.gd" type="Script" id=5]
+[ext_resource path="res://obj/networkerror.obj" type="ArrayMesh" id=6]
+[ext_resource path="res://text.tres" type="Material" id=7]
+[ext_resource path="res://HitMissGeneratorHome.gd" type="Script" id=8]
+[ext_resource path="res://obj/lose.obj" type="ArrayMesh" id=9]
+[ext_resource path="res://obj/ship_hull.obj" type="ArrayMesh" id=10]
+[ext_resource path="res://obj/ship_bow.obj" type="ArrayMesh" id=11]
+[ext_resource path="res://ShipPlacementOrigin.gd" type="Script" id=12]
+[ext_resource path="res://Cursor.gd" type="Script" id=13]
+[ext_resource path="res://obj/cursor.obj" type="ArrayMesh" id=14]
+[ext_resource path="res://red.tres" type="Material" id=15]
+[ext_resource path="res://obj/shoot.obj" type="ArrayMesh" id=16]
+[ext_resource path="res://HitMissGenerator.gd" type="Script" id=17]
+[ext_resource path="res://obj/win.obj" type="ArrayMesh" id=18]
+
+[sub_resource type="Shader" id=1]
+code = "// NOTE: Shader automatically converted from Godot Engine 3.4.stable's SpatialMaterial.
+
+shader_type spatial;
+render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx;
+uniform vec4 albedo : hint_color;
+uniform vec4 albedo2 : hint_color;
+uniform float specular;
+uniform float metallic;
+uniform float roughness : hint_range(0,1);
+uniform float point_size : hint_range(0,128);
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+varying vec3 world_position;
+
+float mod289(float x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
+vec4 mod289v(vec4 x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
+vec4 perm(vec4 x){return mod289v(((x * 34.0) + 1.0) * x);}
+
+float noise(vec3 p){
+    vec3 a = floor(p);
+    vec3 d = p - a;
+    d = d * d * (3.0 - 2.0 * d);
+
+    vec4 b = a.xxyy + vec4(0.0, 1.0, 0.0, 1.0);
+    vec4 k1 = perm(b.xyxy);
+    vec4 k2 = perm(k1.xyxy + b.zzww);
+
+    vec4 c = k2 + a.zzzz;
+    vec4 k3 = perm(c);
+    vec4 k4 = perm(c + 1.0);
+
+    vec4 o1 = fract(k3 * (1.0 / 41.0));
+    vec4 o2 = fract(k4 * (1.0 / 41.0));
+
+    vec4 o3 = o2 * d.z + o1 * (1.0 - d.z);
+    vec2 o4 = o3.yw * d.x + o3.xz * (1.0 - d.x);
+
+    return o4.y * d.y + o4.x * (1.0 - d.y);
+}
+
+void vertex()
+{
+    world_position = (WORLD_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	
+	UV=UV*uv1_scale.xy+uv1_offset.xy;
+	
+}
+
+void fragment() {
+	float height = noise(vec3(world_position.xz * 4.0 + vec2(TIME * 0.3), world_position.z + TIME * 0.3));	
+	
+	vec2 base_uv = UV;
+	float p = ceil(3.0 * abs(height) - 1.0) / 2.0;
+	ALBEDO = albedo.rgb * p + albedo2.rgb * (1.0-p);
+	METALLIC = metallic;
+	ROUGHNESS = roughness;
+	SPECULAR = specular;
+}
+"
+
+[sub_resource type="ShaderMaterial" id=2]
+shader = SubResource( 1 )
+shader_param/albedo = Color( 0.258824, 0.603922, 0.67451, 1 )
+shader_param/albedo2 = Color( 0.258824, 0.384314, 0.67451, 1 )
+shader_param/specular = 0.5
+shader_param/metallic = 0.0
+shader_param/roughness = 1.0
+shader_param/point_size = 1.0
+shader_param/uv1_scale = Vector3( 1, 1, 1 )
+shader_param/uv1_offset = Vector3( 0, 0, 0 )
+shader_param/uv2_scale = Vector3( 1, 1, 1 )
+shader_param/uv2_offset = Vector3( 0, 0, 0 )
+
+[sub_resource type="PlaneMesh" id=3]
+material = SubResource( 2 )
+size = Vector2( 1000, 1000 )
+subdivide_width = 2
+subdivide_depth = 2
+
+[sub_resource type="BoxShape" id=7]
+extents = Vector3( 500, 1, 500 )
+
+[sub_resource type="CylinderShape" id=4]
+
+[node name="GameMain" type="Spatial"]
+
+[node name="WSHandler" parent="." instance=ExtResource( 2 )]
+
+[node name="Foreign Grids" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 10.0586, 0.01, 0 )
+
+[node name="HitMissGenerator" type="Spatial" parent="Foreign Grids"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0, -13.5 )
+script = ExtResource( 17 )
+
+[node name="G1" type="MeshInstance" parent="Foreign Grids"]
+transform = Transform( 4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, -10 )
+mesh = ExtResource( 1 )
+skeleton = NodePath("../..")
+material/0 = ExtResource( 7 )
+
+[node name="G2" type="MeshInstance" parent="Foreign Grids"]
+transform = Transform( 4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0 )
+mesh = ExtResource( 1 )
+skeleton = NodePath("../..")
+material/0 = ExtResource( 7 )
+
+[node name="G3" type="MeshInstance" parent="Foreign Grids"]
+transform = Transform( 4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 10 )
+mesh = ExtResource( 1 )
+skeleton = NodePath("../..")
+material/0 = ExtResource( 7 )
+
+[node name="CursorOrigin" type="Spatial" parent="Foreign Grids"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0, -13.5 )
+
+[node name="Cursor" type="MeshInstance" parent="Foreign Grids/CursorOrigin"]
+transform = Transform( 0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 4, 0, 5 )
+mesh = ExtResource( 14 )
+skeleton = NodePath("../..")
+material/0 = ExtResource( 15 )
+material/1 = ExtResource( 15 )
+script = ExtResource( 13 )
+
+[node name="CameraPos" type="Spatial" parent="Foreign Grids"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -6.53054, 4.02289, 1.91179 )
+
+[node name="Ocean" type="KinematicBody" parent="."]
+
+[node name="OceanPlane" type="MeshInstance" parent="Ocean"]
+mesh = SubResource( 3 )
+skeleton = NodePath("../..")
+material/0 = null
+
+[node name="CollisionShape" type="CollisionShape" parent="Ocean"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0 )
+shape = SubResource( 7 )
+
+[node name="Home Grid" type="MeshInstance" parent="."]
+transform = Transform( 4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0.01, 0 )
+mesh = ExtResource( 1 )
+material/0 = ExtResource( 7 )
+
+[node name="ShipPlacement" type="Spatial" parent="Home Grid"]
+transform = Transform( 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0.25, -0.875, -0.0025, -0.875 )
+script = ExtResource( 12 )
+
+[node name="Carrier" type="Spatial" parent="Home Grid/ShipPlacement"]
+
+[node name="ship_hull" type="MeshInstance" parent="Home Grid/ShipPlacement/Carrier"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 1, 0, 0 )
+mesh = ExtResource( 10 )
+skeleton = NodePath("../ship_bow2")
+material/0 = null
+
+[node name="ship_hull2" type="MeshInstance" parent="Home Grid/ShipPlacement/Carrier"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 3, 0, 0 )
+mesh = ExtResource( 10 )
+skeleton = NodePath("../ship_bow2")
+material/0 = null
+
+[node name="ship_hull3" type="MeshInstance" parent="Home Grid/ShipPlacement/Carrier"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 2, 0, 0 )
+mesh = ExtResource( 10 )
+skeleton = NodePath("../ship_bow2")
+material/0 = null
+
+[node name="ship_bow2" type="MeshInstance" parent="Home Grid/ShipPlacement/Carrier"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 4, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="ship_bow3" type="MeshInstance" parent="Home Grid/ShipPlacement/Carrier"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 0, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="Battleship" type="Spatial" parent="Home Grid/ShipPlacement"]
+visible = false
+
+[node name="ship_hull" type="MeshInstance" parent="Home Grid/ShipPlacement/Battleship"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 1, 0, 0 )
+mesh = ExtResource( 10 )
+skeleton = NodePath("../ship_bow2")
+material/0 = null
+
+[node name="ship_hull3" type="MeshInstance" parent="Home Grid/ShipPlacement/Battleship"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 2, 0, 0 )
+mesh = ExtResource( 10 )
+skeleton = NodePath("../ship_bow2")
+material/0 = null
+
+[node name="ship_bow2" type="MeshInstance" parent="Home Grid/ShipPlacement/Battleship"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 3, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="ship_bow3" type="MeshInstance" parent="Home Grid/ShipPlacement/Battleship"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 0, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="Submarine" type="Spatial" parent="Home Grid/ShipPlacement"]
+visible = false
+
+[node name="ship_hull" type="MeshInstance" parent="Home Grid/ShipPlacement/Submarine"]
+transform = Transform( -0.5, 0, -7.54979e-08, 6.60024e-15, -0.5, -4.37114e-08, -7.54979e-08, -4.37114e-08, 0.5, 1, 0.5, 0 )
+mesh = ExtResource( 10 )
+skeleton = NodePath("../ship_bow2")
+material/0 = null
+
+[node name="ship_bow2" type="MeshInstance" parent="Home Grid/ShipPlacement/Submarine"]
+transform = Transform( 0.5, 0, 0, 0, -0.5, 4.37114e-08, 0, -4.37114e-08, -0.5, 2, 0.5, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="ship_bow3" type="MeshInstance" parent="Home Grid/ShipPlacement/Submarine"]
+transform = Transform( -0.5, 6.60024e-15, 7.54979e-08, 0, -0.5, 4.37114e-08, 7.54979e-08, 4.37114e-08, 0.5, 0, 0.5, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="Destroyer" type="Spatial" parent="Home Grid/ShipPlacement"]
+visible = false
+
+[node name="ship_hull" type="MeshInstance" parent="Home Grid/ShipPlacement/Destroyer"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 1, 0, 0 )
+mesh = ExtResource( 10 )
+skeleton = NodePath("../ship_bow2")
+material/0 = null
+
+[node name="ship_bow2" type="MeshInstance" parent="Home Grid/ShipPlacement/Destroyer"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 2, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="ship_bow3" type="MeshInstance" parent="Home Grid/ShipPlacement/Destroyer"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 0, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="Cruiser" type="Spatial" parent="Home Grid/ShipPlacement"]
+visible = false
+
+[node name="ship_bow2" type="MeshInstance" parent="Home Grid/ShipPlacement/Cruiser"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 1, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="ship_bow3" type="MeshInstance" parent="Home Grid/ShipPlacement/Cruiser"]
+transform = Transform( -0.5, 0, -7.54979e-08, 0, 0.5, 0, 7.54979e-08, 0, -0.5, 0, 0, 0 )
+mesh = ExtResource( 11 )
+skeleton = NodePath("../../../..")
+material/0 = null
+
+[node name="HitMissGeneratorHome" type="Spatial" parent="Home Grid"]
+transform = Transform( 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0.25, -0.875, 0, -0.875 )
+script = ExtResource( 8 )
+
+[node name="CameraPivot" type="KinematicBody" parent="."]
+transform = Transform( 0.256239, 0.7774, -0.574448, -1.18973e-08, 0.594289, 0.804251, 0.966614, -0.20608, 0.15228, -44.2141, 0, 0 )
+collision_layer = 0
+collision_mask = 0
+script = ExtResource( 5 )
+waiting_node = NodePath("../Text/WaitingText/CameraPos")
+network_error_node = NodePath("../Text/networkerror")
+home_grid = NodePath("../Home Grid")
+foreign_grids = NodePath("../Foreign Grids/CameraPos")
+win_text = NodePath("../Text/win")
+lose_text = NodePath("../Text/lose")
+
+[node name="Camera" type="Camera" parent="CameraPivot"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.933 )
+
+[node name="CollisionShape" type="CollisionShape" parent="CameraPivot"]
+shape = SubResource( 4 )
+disabled = true
+
+[node name="Text" type="Node" parent="."]
+
+[node name="WaitingText" type="MeshInstance" parent="Text"]
+transform = Transform( 1.0749, 0, -2.1724, 0, 1, 0, 2.26644, 0, 1.12142, -32.1258, 0, -44.498 )
+mesh = ExtResource( 4 )
+skeleton = NodePath("../../Ocean/OceanPlane")
+material/0 = ExtResource( 7 )
+
+[node name="CameraPos" type="Spatial" parent="Text/WaitingText"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 4.19216, 0, -0.0626898 )
+
+[node name="networkerror" type="MeshInstance" parent="Text"]
+transform = Transform( -0.915496, 0, -3.05383, 0, 1, 0, 3.05383, 0, -0.915496, -24.6137, 0, 57.1024 )
+mesh = ExtResource( 6 )
+skeleton = NodePath("../../CameraPivot")
+material/0 = ExtResource( 7 )
+
+[node name="play" type="MeshInstance" parent="Text"]
+transform = Transform( -0.255062, 0, -2.95277, 0, 1, 0, 2.95277, 0, -0.255062, -43.109, 0.197141, -7.5484 )
+mesh = ExtResource( 3 )
+skeleton = NodePath("../../Ocean/OceanPlane")
+material/0 = ExtResource( 7 )
+
+[node name="shoot" type="MeshInstance" parent="Text"]
+transform = Transform( 0.406314, 0, -2.57993, 0, 1, 0, 2.57993, 0, 0.406314, 15.8801, 0, -12.1633 )
+mesh = ExtResource( 16 )
+skeleton = NodePath("../../Foreign Grids/CursorOrigin/Cursor")
+material/0 = ExtResource( 7 )
+
+[node name="lose" type="MeshInstance" parent="Text"]
+transform = Transform( 1.42936, 0, -2.6376, 0, 1, 0, 2.6376, 0, 1.42936, 44.9558, 0, 23.9997 )
+mesh = ExtResource( 9 )
+skeleton = NodePath("../..")
+material/0 = ExtResource( 7 )
+
+[node name="win" type="MeshInstance" parent="Text"]
+transform = Transform( 1.1294, 0, -2.77929, 0, 1, 0, 2.77929, 0, 1.1294, 40.6917, 0, -27.16 )
+mesh = ExtResource( 18 )
+skeleton = NodePath("../..")
+material/0 = ExtResource( 7 )
+
+[node name="Label" type="Label" parent="."]
+margin_right = 40.0
+margin_bottom = 14.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[connection signal="end_game" from="WSHandler" to="CameraPivot" method="_on_WSHandler_end_game"]
+[connection signal="network_error" from="WSHandler" to="CameraPivot" method="_on_WSHandler_network_error"]
+[connection signal="new_round" from="WSHandler" to="Foreign Grids/CursorOrigin/Cursor" method="_on_WSHandler_new_round"]
+[connection signal="new_round" from="WSHandler" to="CameraPivot" method="_on_WSHandler_new_round"]
+[connection signal="send_msg" from="WSHandler" to="CameraPivot" method="_on_WSHandler_send_msg"]
+[connection signal="set_id" from="WSHandler" to="CameraPivot" method="_on_WSHandler_set_id"]
+[connection signal="ship_hit" from="WSHandler" to="Foreign Grids/HitMissGenerator" method="_on_WSHandler_ship_hit"]
+[connection signal="ship_hit" from="WSHandler" to="Home Grid/HitMissGeneratorHome" method="_on_WSHandler_ship_hit"]
+[connection signal="start_placement" from="WSHandler" to="Home Grid/ShipPlacement" method="_on_WSHandler_start_placement"]
+[connection signal="start_placement" from="WSHandler" to="CameraPivot" method="_on_WSHandler_start_placement"]
+[connection signal="start_playing" from="WSHandler" to="Foreign Grids/CursorOrigin/Cursor" method="_on_WSHandler_start_playing"]
+[connection signal="start_playing" from="WSHandler" to="CameraPivot" method="_on_WSHandler_start_playing"]
+[connection signal="cursor_select" from="Foreign Grids/CursorOrigin/Cursor" to="WSHandler" method="_on_Cursor_cursor_select"]
